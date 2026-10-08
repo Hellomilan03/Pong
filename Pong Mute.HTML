@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pong Game</title>
+
+
+
+
+
+<!-- CSS in Style tag -->
+<style>
+
+#setupModal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.85);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    z-index: 2000;
+}
+
+#setupBox {
+    background: #222;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+    width: 350px;
+}
+
+#setupBox input {
+    margin-top: 5px;
+}
+
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background: #111;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+
+
+#newGameBtn {
+    background: #00ffff;
+    color: black;
+
+    box-shadow:
+        0 0 5px #00ffff,
+        0 0 10px #00ffff,
+        0 0 20px #00ffff;
+}
+
+#newGameBtn:hover {
+    box-shadow:
+        0 0 10px #00ffff,
+        0 0 20px #00ffff,
+        0 0 40px #00ffff;
+}
+
+
+
+canvas {
+    display: block;
+    background: black;
+    position: absolute;
+    top: 90px;               /* push it below your UI */
+    left: 0;
+    width: 100%;
+    height: calc(100% - 165px); /* leave space at bottom too */
+
+
+    border-top: 3px solid #00ffff;
+    border-bottom: 3px solid #00ffff;
+
+box-shadow:
+        0 0 5px #00ffff,
+        0 0 10px #00ffff,
+        0 0 20px #00ffff,
+        0 0 40px #00ffff;
+
+}
+
+
+#leftScore, #rightScore, #hitCounter {
+    transition: transform 0.1s;
+}
+
+
+.score {
+    position: absolute;
+    top: 45px;
+    font-size: 25px;
+    font-weight: bold;
+}
+
+#leftScore {
+    left: 25px;
+}
+
+#rightScore {
+    right: 25px;
+}
+
+#timer {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 28px;
+    font-weight: bold;
+}
+
+#hitCounter {
+    position: absolute;
+    top: 55px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+}
+
+
+button {
+    padding: 10px 20px;
+    font-size: 18px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+
+button:hover {
+    transform: scale(1.05);
+}
+
+
+#playPauseBtn {
+    background: #39ff14;
+    color: white;
+
+    box-shadow:
+        0 0 5px #39ff14,
+        0 0 10px #39ff14,
+        0 0 20px #39ff14;
+}
+
+#playPauseBtn:hover {
+    box-shadow:
+        0 0 10px #39ff14,
+        0 0 20px #39ff14,
+        0 0 40px #39ff14;
+}
+
+
+#resetBtn {
+    background: #ff1493;
+    color: white;
+
+    box-shadow:
+        0 0 5px #ff1493,
+        0 0 10px #ff1493,
+        0 0 20px #ff1493;
+}
+
+
+#resetBtn:hover {
+    box-shadow:
+        0 0 10px #ff1493,
+        0 0 20px #ff1493,
+        0 0 40px #ff1493;
+}
+
+
+#instructionsModal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+#instructionsBox {
+    background: #222;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+    border: 2px solid #555;
+    max-width: 400px;
+}
+
+#instructionsBox h2 {
+    margin-top: 0;
+}
+
+#okayBtn {
+    margin-top: 15px;
+    background: #4CAF50;
+    color: white;
+}
+</style>
+</head>
+<body>
+
+<div id="leftPlayerLabel" class="score" style="top: 15px; left: 25px; font-size: 25px;">
+    Player 1
+</div>
+
+<div id="leftScore" class="score">
+    Score: 0
+</div>
+<div id="timer">00:00</div>
+<div id="rightPlayerLabel" class="score" style="top: 15px; right: 25px; font-size: 25px;">
+    Player 2
+</div>
+
+<div id="rightScore" class="score">
+    Score: 0
+</div>
+
+<div id="hitCounter">Hits: 0</div>
+
+<div id="instructionsModal">
+    <div id="instructionsBox">
+        <h2>Pong Controls</h2>
+
+        <p><strong>Left Paddle</strong></p>
+        <p>E = Move Up</p>
+        <p>D = Move Down</p>
+
+        <p><strong>Right Paddle</strong></p>
+        <p>↑ Arrow = Move Up</p>
+        <p>↓ Arrow = Move Down</p>
+
+        <button id="okayBtn">OK</button>
+    </div>
+</div>
+
+
+<div id="setupModal">
+    <div id="setupBox">
+
+        <h2>Game Setup</h2>
+
+        <p><strong>Choose Game Mode</strong></p>
+
+        <label>
+            <input type="radio" name="gameMode"
+                   value="score" checked>
+            Play to Score
+	    <div>1-99</div>
+        </label>
+
+        <br><br>
+
+        <label>
+            Winning Score:
+            <input type="number"
+                   id="scoreLimit"
+                   value="10"
+                   min="1"
+                   max="99">
+        </label>
+
+        <hr>
+
+        <label>
+            <input type="radio" name="gameMode"
+                   value="time">
+            Timed Game
+	    <div>1Min - 60Mins</div>
+        </label>
+
+        <br><br>
+
+        <label>
+            Minutes:
+            <input type="number"
+                   id="timeLimit"
+                   value="5"
+                   min="1"
+                   max="60">
+        </label>
+
+        <br><br>
+<hr>
+
+<h3>Player Names</h3>
+
+<label>
+    Left Player:
+    <input type="text" id="leftPlayerName" value="Player 1">
+</label>
+
+<br><br>
+
+<label>
+    Right Player:
+    <input type="text" id="rightPlayerName" value="Player 2">
+</label>
+        <button id="startGameBtn" style="margin-top: 50px;">
+            Start Game
+        </button>
+
+    </div>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<div class="controls">
+    <button id="playPauseBtn">Play</button>
+    <button id="resetBtn">Reset</button>
+    <button id="newGameBtn">New Game</button>
+</div>
+
+
+
+<div id="gameOverModal" style="
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+">
+    <div style="
+        background: #222;
+        padding: 30px;
+        border-radius: 10px;
+        text-align: center;
+        border: 2px solid #00ffff;
+        width: 400px;
+    ">
+        <h2 id="gameOverTitle">Game Over</h2>
+
+        <p id="gameOverDetails"></p>
+
+        <button id="closeGameOverBtn"
+            style="margin-top:20px; background:#39ff14;">
+            OK
+        </button>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+<!-- JavaScript in Script Tag -->
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight - 165;
+
+const paddleWidth = 15;
+const paddleHeight = 120;
+const paddleSpeed = 8;
+
+
+let leftScore = 0;
+let ballColor = "white";
+let sparks = [];
+let rightScore = 0;
+let hitCount = 0;
+let elapsedSeconds = 0;
+let gameRunning = false;
+let gameMode = "score";
+let leftPlayerName = "Player 1";
+let rightPlayerName = "Player 2";
+let winningScore = 10;
+let timeLimitMinutes = 5;
+let gameEnded = false;
+let ballGlow = 5;       // normal glow
+let maxGlow = 90;        // strong glow on hit
+let glowDecay = 1;       // how fast it fades
+let leftScoreFlash = 1;
+let rightScoreFlash = 1;
+let hitFlash = 1;
+let leftPaddleFlash = 0;
+let rightPaddleFlash = 0;
+let trailTimer = 0;
+const leftPaddle = {
+    x: 30,
+    y: canvas.height / 2 - paddleHeight / 2
+};
+
+const rightPaddle = {
+    x: canvas.width - 45,
+    y: canvas.height / 2 - paddleHeight / 2
+};
+
+const ball = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    radius: 12,
+    speedX: 6,
+    speedY: 4
+};
+
+const keys = {};
+
+document.addEventListener("keydown", (e) => {
+    keys[e.key.toLowerCase()] = true;
+});
+
+document.addEventListener("keyup", (e) => {
+    keys[e.key.toLowerCase()] = false;
+});
+
+
+document.getElementById("newGameBtn")
+.addEventListener("click", () => {
+
+    // stop game
+    gameRunning = false;
+    playPauseBtn.textContent = "Play";
+if (confirm("Start a new game? Current progress will be lost.")) {
+    // reset values
+    leftScore = 0;
+    rightScore = 0;
+    hitCount = 0;
+    elapsedSeconds = 0;
+
+    // reset UI
+    document.getElementById("leftScore").textContent = "Score: 0";
+    document.getElementById("rightScore").textContent = "Score: 0";
+    document.getElementById("hitCounter").textContent = "Hits: 0";
+    document.getElementById("timer").textContent = "00:00";
+
+    // reset paddles + ball
+    leftPaddle.y = canvas.height / 2 - paddleHeight / 2;
+    rightPaddle.y = canvas.height / 2 - paddleHeight / 2;
+
+    resetBall();
+
+    // ✅ show setup modal again
+    document.getElementById("setupModal").style.display = "flex";
+}
+});
+
+
+document.getElementById("okayBtn")
+.addEventListener("click", () => {
+
+    document.getElementById("instructionsModal")
+        .style.display = "none";
+
+    gameRunning = true;
+    playPauseBtn.textContent = "Pause";
+});
+
+function updatePaddles() {
+
+if (keys["e"])
+    leftPaddle.y -= paddleSpeed;
+
+if (keys["d"])
+    leftPaddle.y += paddleSpeed;
+
+if (keys["arrowup"])
+    rightPaddle.y -= paddleSpeed;
+
+if (keys["arrowdown"])
+    rightPaddle.y += paddleSpeed;
+
+    leftPaddle.y = Math.max(
+        0,
+        Math.min(canvas.height - paddleHeight,
+        leftPaddle.y)
+    );
+
+    rightPaddle.y = Math.max(
+        0,
+        Math.min(canvas.height - paddleHeight,
+        rightPaddle.y)
+    );
+}
+
+function resetBall() {
+
+    ball.x = canvas.width / 2;
+    ball.y = canvas.height / 2;
+
+    ball.speedX =
+        Math.random() > 0.5 ? 6 : -6;
+
+    ball.speedY =
+        (Math.random() * 6) - 3;
+}
+
+
+
+function showGameOver(winnerName, winnerScore, loserScore) {
+
+    const title = document.getElementById("gameOverTitle");
+    const details = document.getElementById("gameOverDetails");
+
+    title.textContent = winnerName + " Wins!";
+
+    details.innerHTML = `
+        ${winnerScore} - ${loserScore}<br><br>
+        Hits: ${hitCount}<br>
+        Time: ${formatTime(elapsedSeconds)}
+    `;
+
+    document.getElementById("gameOverModal").style.display = "flex";
+}
+
+
+
+function createSparks(x, y, color, directionX = 0) {
+    for (let i = 0; i < 50; i++) {
+        sparks.push({
+            x: x,
+            y: y,
+            dx: directionX === 0
+                ? (Math.random() - 0.5) * 8
+                : (Math.random() * 4 + 2) * directionX,
+            dy: (Math.random() - 0.5) * 8,
+            life: 20,
+            color: color
+        });
+    }
+}
+
+
+function updateBall() {
+
+    ball.x += ball.speedX;
+    ball.y += ball.speedY;
+if (
+    ball.y - ball.radius <= 0 ||
+    ball.y + ball.radius >= canvas.height
+) {
+    ball.speedY *= -1;
+
+    // ✅ prevent flat bouncing
+    if (Math.abs(ball.speedY) < 2) {
+        ball.speedY = ball.speedY > 0 ? 2 : -2;
+    }
+
+    ballGlow = maxGlow;
+ballColor = "#00FFFF";   // ✅ ADD THIS
+createSparks(ball.x, ball.y, "#00FFFF", 0); // 🔥 ADD
+trailTimer = 10;
+}
+
+
+
+    if (
+        ball.x - ball.radius <= leftPaddle.x + paddleWidth + Math.abs(ball.speedX) &&
+        ball.x - ball.radius >= leftPaddle.x &&
+        ball.y >= leftPaddle.y &&
+        ball.y <= leftPaddle.y + paddleHeight &&
+        ball.speedX < 0
+    ) {
+
+    	ballGlow = maxGlow; // 🔥 boost glow
+ballColor = "#FFFF33";   // ✅ ADD 
+trailTimer = 10;
+createSparks(ball.x, ball.y, "#FFFF33", 1); // left color
+
+        const hitPosition =
+            (ball.y -
+            (leftPaddle.y + paddleHeight / 2))
+            / (paddleHeight / 2);
+
+        ball.speedY = hitPosition * 8;
+        ball.speedX *= -1.05;
+
+        ball.x =
+            leftPaddle.x +
+            paddleWidth +
+            ball.radius;
+
+        hitCount++;
+	hitFlash = 1.5;
+	leftPaddleFlash = 10; // number of frames to stay white
+        document.getElementById("hitCounter")
+            .textContent =
+            "Hits: " + hitCount;
+    }
+
+    if (
+        ball.x + ball.radius >= rightPaddle.x - Math.abs(ball.speedX) &&
+        ball.x + ball.radius <= rightPaddle.x + paddleWidth &&
+        ball.y >= rightPaddle.y &&
+        ball.y <= rightPaddle.y + paddleHeight &&
+        ball.speedX > 0
+    ) {
+
+    	ballGlow = maxGlow; // 🔥 boost glow
+ballColor = "#FF5F1F";   // ✅ ADD THIS
+trailTimer = 10;
+createSparks(ball.x, ball.y, "#FF5F1F", -1); // right color
+
+        const hitPosition =
+            (ball.y -
+            (rightPaddle.y + paddleHeight / 2))
+            / (paddleHeight / 2);
+
+        ball.speedY = hitPosition * 8;
+        ball.speedX *= -1.05;
+	
+const maxSpeed = 50;
+
+if (Math.abs(ball.speedX) > maxSpeed) {
+    ball.speedX = ball.speedX > 0 ? maxSpeed : -maxSpeed;
+}
+
+
+        ball.x =
+            rightPaddle.x -
+            ball.radius;
+
+        hitCount++;
+	hitFlash = 1.5;
+	rightPaddleFlash = 10;
+        document.getElementById("hitCounter")
+            .textContent =
+            "Hits: " + hitCount;
+    }
+
+    if (ball.x < 0) {
+
+        rightScore++;
+	rightScoreFlash = 1.5;
+
+        document.getElementById("rightScore")
+            .textContent =
+            "Score: " + rightScore;
+
+        checkWinner();
+        resetBall();
+    }
+
+    if (ball.x > canvas.width) {
+
+        leftScore++;
+	leftScoreFlash = 1.5;
+
+        document.getElementById("leftScore")
+            .textContent =
+            "Score: " + leftScore;
+
+        checkWinner();
+        resetBall();
+    }
+
+
+
+if (ballGlow > 8) {
+    ballGlow -= glowDecay;
+}
+
+// ✅ ADD THIS RIGHT HERE
+if (ballGlow <= 8) {
+    ballColor = "white";
+}
+
+if (leftPaddleFlash > 0) leftPaddleFlash--;
+if (rightPaddleFlash > 0) rightPaddleFlash--;
+if (trailTimer > 0) trailTimer--;
+
+}
+
+
+
+function formatTime(seconds) {
+    const minutes = String(Math.floor(seconds / 60)).padStart(2, "0");
+    const secs = String(seconds % 60).padStart(2, "0");
+    return `${minutes}:${secs}`;
+}
+function checkWinner() {
+
+    if (gameMode !== "score")
+        return;
+
+if (leftScore >= winningScore) {
+
+    gameRunning = false;
+    gameEnded = true;
+
+    showGameOver(leftPlayerName, leftScore, rightScore);
+}
+
+if (rightScore >= winningScore) {
+
+    gameRunning = false;
+    gameEnded = true;
+
+    showGameOver(rightPlayerName, rightScore, leftScore);
+}
+}
+function drawCenterLine() {
+
+    ctx.strokeStyle = "#444";
+    ctx.setLineDash([10,15]);
+
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, 0);
+    ctx.lineTo(canvas.width / 2, canvas.height);
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+
+// update sparks
+for (let i = sparks.length - 1; i >= 0; i--) {
+    let s = sparks[i];
+
+    
+s.dy += 0.3;   // ✅ gravity pulls downward
+s.x += s.dx;
+s.y += s.dy;
+
+s.dx *= 0.98;
+s.dy *= 0.98;
+
+
+    s.life--;
+
+    if (s.life <= 0) {
+        sparks.splice(i, 1);
+    }
+}
+
+}
+
+
+function handleGameEnd() {
+
+    // show setup screen again
+    document.getElementById("setupModal").style.display = "flex";
+
+    // reset game state
+    leftScore = 0;
+    rightScore = 0;
+    hitCount = 0;
+    elapsedSeconds = 0;
+    gameEnded = false;
+
+    // reset UI
+    document.getElementById("leftScore").textContent = "Score: 0";
+    document.getElementById("rightScore").textContent = "Score: 0";
+    document.getElementById("hitCounter").textContent = "Hits: 0";
+    document.getElementById("timer").textContent = "00:00";
+
+    // reset positions
+    leftPaddle.y = canvas.height / 2 - paddleHeight / 2;
+    rightPaddle.y = canvas.height / 2 - paddleHeight / 2;
+
+    resetBall();
+
+    // stop play state
+    gameRunning = false;
+    playPauseBtn.textContent = "Play";
+}
+
+
+
+
+function draw() {
+
+    if (trailTimer > 0) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+    } else {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+    }
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    drawCenterLine();
+
+    
+
+// 🟧 LEFT PADDLE
+if (leftPaddleFlash > 0) {
+    ctx.shadowBlur = 30;
+    ctx.shadowColor = "#FFFFFF";
+    ctx.fillStyle = "#FFFFFF";
+} else {
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = "#FF5F1F";
+    ctx.fillStyle = "#FFFF33";
+}
+
+ctx.fillRect(leftPaddle.x, leftPaddle.y, paddleWidth, paddleHeight);
+
+
+// 🟨 RIGHT PADDLE
+if (rightPaddleFlash > 0) {
+    ctx.shadowBlur = 30;
+    ctx.shadowColor = "#FFFFFF";
+    ctx.fillStyle = "#FFFFFF";
+} else {
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = "#FFFF33";
+    ctx.fillStyle = "#FF5F1F";
+}
+
+ctx.fillRect(rightPaddle.x, rightPaddle.y, paddleWidth, paddleHeight);
+
+
+// ✅ DRAW BALL
+ctx.shadowBlur = ballGlow * 1.5;
+ctx.shadowColor = ballGlow > 20 ? "#FF00FF" : "#00FFFF";
+
+ctx.fillStyle = ballColor;
+
+ctx.beginPath();
+ctx.arc(
+    ball.x,
+    ball.y,
+    ball.radius,
+    0,
+    Math.PI * 2
+);
+ctx.fill();
+
+
+// ✅ ✨ DRAW SPARKS (ADD THIS HERE)
+for (let s of sparks) {
+    ctx.globalAlpha = s.life / 20;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = s.color;
+    ctx.fillStyle = s.color;
+
+    ctx.fillRect(s.x, s.y, 5, 5);
+
+    ctx.globalAlpha = 1;
+}
+
+// ✅ reset shadow
+ctx.shadowBlur = 0;
+}
+
+
+
+function gameLoop() {
+
+    if (gameRunning) {
+        updatePaddles();
+        updateBall();
+    }
+
+    draw();
+
+    // ✅ MOVE YOUR FLASH LOGIC HERE
+    document.getElementById("leftScore").style.transform =
+        `scale(${leftScoreFlash})`;
+
+    document.getElementById("rightScore").style.transform =
+        `scale(${rightScoreFlash})`;
+
+    document.getElementById("hitCounter").style.transform =
+        `translateX(-50%) scale(${hitFlash})`;
+
+
+    // fade back
+    
+    if (leftScoreFlash > 1) leftScoreFlash -= 0.02;
+    if (rightScoreFlash > 1) rightScoreFlash -= 0.02;
+
+    if (hitFlash > 1) hitFlash -= 0.03;
+
+    // ✅ color flash
+    const leftColor = leftScoreFlash > 1.2 ? "#FFFF33" : "white";
+    const rightColor = rightScoreFlash > 1.2 ? "#FF5F1F" : "white";
+    document.getElementById("leftScore").style.color = leftColor;
+    document.getElementById("rightScore").style.color = rightColor;
+
+    requestAnimationFrame(gameLoop);
+}
+
+
+gameLoop();
+
+setInterval(() => {
+
+    if (!gameRunning) return;
+
+    elapsedSeconds++;
+if (
+    gameMode === "time" &&
+    elapsedSeconds >= timeLimitMinutes * 60
+) {
+
+    gameRunning = false;
+    gameEnded = true;
+
+    if (leftScore > rightScore) {
+
+ 
+showGameOver(
+    leftPlayerName,
+    leftScore,
+    rightScore
+);
+
+} else if (rightScore > leftScore) {
+
+    
+showGameOver(
+    rightPlayerName,
+    rightScore,
+    leftScore
+);
+
+handleGameEnd();
+} else {
+
+    alert(
+        "Tie Game!\n\n" +
+        leftScore + " - " + rightScore + "\n\n" +
+        "Hits: " + hitCount
+    );
+handleGameEnd();
+}
+}
+    const minutes =
+        String(Math.floor(elapsedSeconds / 60))
+        .padStart(2, "0");
+
+    const seconds =
+        String(elapsedSeconds % 60)
+        .padStart(2, "0");
+
+    document.getElementById("timer")
+        .textContent =
+        `${minutes}:${seconds}`;
+
+}, 1000);
+
+const playPauseBtn =
+    document.getElementById("playPauseBtn");
+
+playPauseBtn.addEventListener("click", () => {
+
+    gameRunning = !gameRunning;
+
+    playPauseBtn.textContent =
+        gameRunning ? "Pause" : "Play";
+});
+
+const hitColor = hitFlash > 1.2 ? "#FF00FF" : "white";
+document.getElementById("hitCounter").style.color = hitColor;
+
+document.getElementById("resetBtn")
+.addEventListener("click", () => {
+gameRunning = false;
+playPauseBtn.textContent = "Play";
+if (confirm("Reset current match? Current progress will be lost.")) {
+
+    leftScore = 0;
+    rightScore = 0;
+    hitCount = 0;
+    elapsedSeconds = 0;
+
+    
+
+    playPauseBtn.textContent = "Play";
+
+    document.getElementById("leftScore")
+        .textContent = "Score: 0";
+
+    document.getElementById("rightScore")
+        .textContent = "Score: 0";
+
+    document.getElementById("hitCounter")
+        .textContent = "Hits: 0";
+
+    document.getElementById("timer")
+        .textContent = "00:00";
+
+    leftPaddle.y =
+        canvas.height / 2 - paddleHeight / 2;
+
+    rightPaddle.y =
+        canvas.height / 2 - paddleHeight / 2;
+
+    resetBall();
+}
+});
+
+
+document.getElementById("startGameBtn")
+.addEventListener("click", () => {
+
+    gameMode =
+        document.querySelector(
+            'input[name="gameMode"]:checked'
+        ).value;
+
+    winningScore =
+        parseInt(
+            document.getElementById("scoreLimit").value
+        );
+
+    timeLimitMinutes =
+        parseInt(
+            document.getElementById("timeLimit").value
+        );
+
+    // 👇 ADD THIS PART (STEP 5)
+    leftPlayerName =
+        document.getElementById("leftPlayerName").value;
+
+    rightPlayerName =
+        document.getElementById("rightPlayerName").value;
+
+    document.getElementById("setupModal")
+        .style.display = "none";
+window.focus();
+
+    gameRunning = false;
+
+    playPauseBtn.textContent = "Play";
+
+    // 👇 ALSO ADD THIS (update UI labels)
+    document.getElementById("leftPlayerLabel").textContent =
+        leftPlayerName;
+
+    document.getElementById("rightPlayerLabel").textContent =
+        rightPlayerName;
+});
+
+
+window.addEventListener("resize", () => {
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    rightPaddle.x =
+        canvas.width - 45;
+});
+
+
+document.getElementById("closeGameOverBtn")
+.addEventListener("click", () => {
+
+    document.getElementById("gameOverModal").style.display = "none";
+
+    handleGameEnd(); // reuse your reset logic
+});
+
+
+resetBall();
+
+
+
+
+</script>
+</body>
+</html>
